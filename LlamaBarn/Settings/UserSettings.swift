@@ -46,13 +46,13 @@ enum UserSettings {
   ///   `defaults write app.llamabarn.LlamaBarn exposeToNetwork -string "192.168.1.100"` → binds to that IP
   ///   `defaults delete app.llamabarn.LlamaBarn exposeToNetwork` → localhost only
   static var networkBindAddress: String? {
-    let obj = defaults.object(forKey: Keys.exposeToNetwork)
+    let raw = defaults.object(forKey: Keys.exposeToNetwork)
     // If it's a string, use it directly as the bind address
-    if let str = obj as? String {
+    if let str = raw as? String {
       return str
     }
     // If it's a bool and true, bind to all interfaces
-    if let bool = obj as? Bool, bool {
+    if let bool = raw as? Bool, bool {
       return "0.0.0.0"
     }
     // Not set or false → localhost only
