@@ -144,6 +144,23 @@ enum HFCache {
     }
   }
 
+  /// Returns true if `filename` (repo-relative) exists in any snapshot commit
+  /// of the repo — i.e. the file is already installed in the cache.
+  static func snapshotFileExists(cacheDir: URL, repoDir: String, filename: String) -> Bool {
+    let snapshotsDir =
+      cacheDir
+      .appendingPathComponent(repoDir)
+      .appendingPathComponent("snapshots")
+
+    guard let commits = try? FileManager.default.contentsOfDirectory(atPath: snapshotsDir.path)
+    else { return false }
+
+    return commits.contains { commit in
+      let filePath = snapshotsDir.appendingPathComponent(commit).appendingPathComponent(filename)
+      return FileManager.default.fileExists(atPath: filePath.path)
+    }
+  }
+
   // MARK: - API Calls
 
   /// Metadata returned by a HEAD request to a HF file URL.
@@ -308,14 +325,6 @@ enum HFCache {
     }) {}
   }
 
-  /// Computes SHA256 of a file using streaming 1MB chunks.
-  /// Used as fallback when the HEAD request doesn't provide the hash.
-  static func computeSHA256(of fileURL: URL) throws -> String {
-    let hasher = SHA256Hasher()
-    try feedHasher(hasher, from: fileURL)
-    return hasher.finalize()
-  }
-
   // MARK: - Deletion
 
   /// Deletes a model's files from the HF cache.
@@ -374,8 +383,6 @@ enum HFCache {
       try? fm.removeItem(at: url)
     }
   }
-
-  // MARK: - Scanning
 
   // MARK: - Discovery
 
@@ -607,20 +614,6 @@ private class SameHostRedirectDelegate: NSObject, URLSessionTaskDelegate {
       completionHandler(request)
     } else {
       completionHandler(nil)
-    }
-  }
-}
-
-// MARK: - Errors
-
-enum HFCacheError: Error, LocalizedError {
-  case invalidUrl(String)
-  case apiError(String)
-
-  var errorDescription: String? {
-    switch self {
-    case .invalidUrl(let url): return "Invalid HF URL: \(url)"
-    case .apiError(let msg): return "HF API error: \(msg)"
     }
   }
 }
