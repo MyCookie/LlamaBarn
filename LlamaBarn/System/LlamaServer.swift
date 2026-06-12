@@ -93,15 +93,6 @@ class LlamaServer {
     }
   }
 
-  /// Resolves the `llama` binary path, throwing if no install is found.
-  private func resolveLlamaPath() throws -> String {
-    guard let path = LlamaBinaries.llamaPath else {
-      logger.error("llama binary not found")
-      throw LlamaServerError.invalidPath("llama")
-    }
-    return path
-  }
-
   private func attachOutputHandlers(for process: Process) {
     guard let outputPipe = process.standardOutput as? Pipe,
       let errorPipe = process.standardError as? Pipe
@@ -138,14 +129,9 @@ class LlamaServer {
     stop()
 
     // Resolve the llama binary up front; a missing install surfaces as an error.
-    let llamaPath: String
-    do {
-      llamaPath = try resolveLlamaPath()
-    } catch let error as LlamaServerError {
-      self.state = .error(error)
-      return
-    } catch {
-      self.state = .error(.launchFailed("Validation failed"))
+    guard let llamaPath = LlamaBinaries.llamaPath else {
+      logger.error("llama binary not found")
+      state = .error(.invalidPath("llama"))
       return
     }
 
