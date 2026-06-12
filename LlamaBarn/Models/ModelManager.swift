@@ -139,16 +139,10 @@ class ModelManager: NSObject, URLSessionDataDelegate {
       let plan = await self.fetchHFDownloadPlan(for: model)
       await MainActor.run {
         guard let plan else {
-          self.logger.error("HF metadata fetch failed for \(model.displayName); aborting download")
-          self.tearDownActiveDownload(modelId: modelId, outcome: .pause)
-          NotificationCenter.default.post(
-            name: .LBModelDownloadDidFail,
-            object: self,
-            userInfo: [
-              "model": model,
-              "error":
-                "Couldn't reach Hugging Face to start the download. This is usually a temporary rate limit or outage — try again in a few minutes, or set a Hugging Face token in Settings to lift the limit.",
-            ]
+          self.failDownload(
+            model: model,
+            reason:
+              "Couldn't reach Hugging Face to start the download. This is usually a temporary rate limit or outage — try again in a few minutes, or set a Hugging Face token in Settings to lift the limit."
           )
           return
         }
@@ -191,19 +185,13 @@ class ModelManager: NSObject, URLSessionDataDelegate {
         aggregate.addTask(task)
         task.resume()
       } catch {
-        logger.error(
-          "Failed to open partial for \(fileUrl.lastPathComponent): \(error.localizedDescription)")
         // Abort the whole model download — we can't proceed with a missing partial.
-        // Cancel any tasks already started for this model.
+        // Registering the aggregate first lets failDownload cancel any tasks
+        // already started for this model.
         activeDownloads[modelId] = aggregate
-        tearDownActiveDownload(modelId: modelId, outcome: .pause)
-        NotificationCenter.default.post(
-          name: .LBModelDownloadDidFail, object: self,
-          userInfo: [
-            "model": model,
-            "error": "Couldn't open staging file: \(error.localizedDescription)",
-          ]
-        )
+        failDownload(
+          model: model,
+          reason: "Couldn't open staging file: \(error.localizedDescription)")
         return
       }
     }
@@ -650,6 +638,20 @@ class ModelManager: NSObject, URLSessionDataDelegate {
     // from having to remember to fire the right notifications.
     NotificationCenter.default.post(name: .LBModelDownloadsDidChange, object: self)
     NotificationCenter.default.post(name: .LBModelDownloadedListDidChange, object: self)
+  }
+
+  /// Single failure-reporting path: tears down the download (keeping partials so
+  /// the row resurfaces as paused where possible) and posts the failure alert.
+  /// Used both by start-time failures here and by the transfer engine's
+  /// delegate-queue failure handler (via a main-actor hop).
+  func failDownload(model: Model, reason: String) {
+    logger.error("Model download failed (\(reason)) for model: \(model.displayName)")
+    tearDownActiveDownload(modelId: model.id, outcome: .pause)
+    NotificationCenter.default.post(
+      name: .LBModelDownloadDidFail,
+      object: self,
+      userInfo: ["model": model, "error": reason]
+    )
   }
 
   /// Recomputes the aggregate progress for a model from its per-task writer state.

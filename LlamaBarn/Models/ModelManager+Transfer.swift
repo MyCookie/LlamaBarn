@@ -265,16 +265,11 @@ extension ModelManager {
     }
   }
 
+  /// Delegate-queue entry point for failures: hops to the main actor and funnels
+  /// into `failDownload`, the single failure-reporting path.
   nonisolated private func handleDownloadFailure(model: Model, reason: String) {
     DispatchQueue.main.async { [weak self] in
-      guard let self = self else { return }
-      self.logger.error("Model download failed (\(reason)) for model: \(model.displayName)")
-      self.tearDownActiveDownload(modelId: model.id, outcome: .pause)
-      NotificationCenter.default.post(
-        name: .LBModelDownloadDidFail,
-        object: self,
-        userInfo: ["model": model, "error": reason]
-      )
+      self?.failDownload(model: model, reason: reason)
     }
   }
 
