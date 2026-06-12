@@ -161,20 +161,15 @@ class ModelManager: NSObject, URLSessionDataDelegate {
   /// if a partial already exists on disk, we resume via a `Range` header.
   private func startDownloadTasks(model: Model, files: [URL]) {
     let modelId = model.id
-    guard let plan = activeDownloads[modelId]?.plan else {
+    // Reuse the placeholder entry `downloadModel` registered — it already carries
+    // the plan and the resumed-bytes-seeded progress, so the row never flashes
+    // back to 0% while the tasks spin up.
+    guard var aggregate = activeDownloads[modelId], let plan = aggregate.plan else {
       logger.error("Missing HF download plan when starting tasks for \(model.displayName)")
       tearDownActiveDownload(modelId: modelId, outcome: .pause)
       return
     }
     let cacheDir = UserSettings.hfCacheDirectory
-    let totalUnitCount = max(remainingBytesRequired(for: model), 1)
-    var aggregate = ActiveDownload(
-      model: model,
-      progress: Progress(totalUnitCount: totalUnitCount),
-      tasks: [:],
-      completedFilesBytes: 0,
-      plan: plan
-    )
 
     for fileUrl in files {
       do {
@@ -276,12 +271,7 @@ class ModelManager: NSObject, URLSessionDataDelegate {
     guard let commit else { return nil }
 
     // Collect blob hashes (some may be nil if header was missing)
-    var blobHashes: [URL: String] = [:]
-    for (url, metadata) in allMetadata {
-      if let hash = metadata.blobHash {
-        blobHashes[url] = hash
-      }
-    }
+    let blobHashes = allMetadata.compactMapValues(\.blobHash)
 
     return HFDownloadPlan(repoDir: repoDir, commit: commit, blobHashes: blobHashes)
   }
