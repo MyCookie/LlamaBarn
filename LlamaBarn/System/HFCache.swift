@@ -423,36 +423,7 @@ enum HFCache {
       // of the result list.
       for commit in commits {
         let snapshotDir = snapshotsDir.appendingPathComponent(commit)
-
-        // Collect GGUF files from the snapshot dir and one level of subdirs.
-        // Some repos (e.g. unsloth) store sharded quants in per-quant subdirs
-        // like Q4_K_M/model-00001-of-00003.gguf.
-        // Paths are relative to snapshotDir (e.g. "file.gguf" or "Q4_K_M/file.gguf").
-        guard let topFiles = try? fm.contentsOfDirectory(atPath: snapshotDir.path) else {
-          continue
-        }
-
-        var allFiles: [String] = []
-        for item in topFiles {
-          let itemPath = snapshotDir.appendingPathComponent(item).path
-          var isDir: ObjCBool = false
-          if fm.fileExists(atPath: itemPath, isDirectory: &isDir), isDir.boolValue {
-            if let subFiles = try? fm.contentsOfDirectory(atPath: itemPath) {
-              for subFile in subFiles {
-                allFiles.append("\(item)/\(subFile)")
-              }
-            }
-          } else {
-            allFiles.append(item)
-          }
-        }
-
-        // Skip mmproj files (vision projection) — they're not runnable models.
-        let ggufFiles = allFiles.filter { relativePath in
-          let fileName = URL(fileURLWithPath: relativePath).lastPathComponent.lowercased()
-          return fileName.hasSuffix(".gguf") && !fileName.hasPrefix("mmproj")
-        }
-
+        let ggufFiles = collectGgufFiles(in: snapshotDir, fm: fm)
         guard !ggufFiles.isEmpty else { continue }
 
         // Group split shards: "model-00001-of-00003.gguf" etc.
@@ -499,6 +470,37 @@ enum HFCache {
     }
 
     return results
+  }
+
+  /// Collects runnable GGUF files from a snapshot dir and one level of subdirs.
+  /// Some repos (e.g. unsloth) store sharded quants in per-quant subdirs like
+  /// Q4_K_M/model-00001-of-00003.gguf. Returned paths are relative to
+  /// `snapshotDir` (e.g. "file.gguf" or "Q4_K_M/file.gguf"). Skips mmproj files
+  /// (vision projection) — they're not runnable models.
+  private static func collectGgufFiles(in snapshotDir: URL, fm: FileManager) -> [String] {
+    guard let topFiles = try? fm.contentsOfDirectory(atPath: snapshotDir.path) else {
+      return []
+    }
+
+    var allFiles: [String] = []
+    for item in topFiles {
+      let itemPath = snapshotDir.appendingPathComponent(item).path
+      var isDir: ObjCBool = false
+      if fm.fileExists(atPath: itemPath, isDirectory: &isDir), isDir.boolValue {
+        if let subFiles = try? fm.contentsOfDirectory(atPath: itemPath) {
+          for subFile in subFiles {
+            allFiles.append("\(item)/\(subFile)")
+          }
+        }
+      } else {
+        allFiles.append(item)
+      }
+    }
+
+    return allFiles.filter { relativePath in
+      let fileName = URL(fileURLWithPath: relativePath).lastPathComponent.lowercased()
+      return fileName.hasSuffix(".gguf") && !fileName.hasPrefix("mmproj")
+    }
   }
 
   /// Builds a `Model` + `ResolvedPaths` from a discovered GGUF file.
