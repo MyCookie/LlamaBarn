@@ -22,6 +22,16 @@ extension Model {
     return max(totalMb * 0.75 - memOverheadMb, 0)
   }
 
+  /// Rough pre-download fit check used by the deeplink resolver and the
+  /// Discover picks: model weight memory ≈ fileSize × 1.05 must be within
+  /// budget. Unknown sizes pass — don't filter out. The real compatibility
+  /// check runs at launch once the MemProfile probe has measured resident bytes.
+  static func estimatedWeightFits(bytes: Int64?, budgetMb: Double) -> Bool {
+    guard let bytes, bytes > 0 else { return true }
+    let weightMb = Double(bytes) / 1_048_576.0 * 1.05
+    return weightMb <= budgetMb
+  }
+
   func usableCtxWindow(
     desiredTokens: Int? = nil,
     maximizeContext: Bool = false

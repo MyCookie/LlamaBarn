@@ -256,7 +256,8 @@ enum HFRepoResolver {
     guard !selectable.isEmpty else { throw ResolveError.noGgufFiles(repo) }
 
     let compatible = selectable.filter {
-      fits(bytes: estimatedModelBytes(for: $0, siblings: siblings, repo: repo), budgetMb: budgetMb)
+      Model.estimatedWeightFits(
+        bytes: estimatedModelBytes(for: $0, siblings: siblings, repo: repo), budgetMb: budgetMb)
     }
 
     // Tag preference: try each in order, take the first matching candidate.
@@ -321,15 +322,6 @@ enum HFRepoResolver {
       total += size
     }
     return total
-  }
-
-  private static func fits(bytes: Int64?, budgetMb: Double) -> Bool {
-    // Model weight memory ≈ fileSize × 1.05. This is a rough pre-download
-    // filter; the real compatibility check runs at launch once the MemProfile
-    // probe has measured resident bytes.
-    guard let bytes, bytes > 0 else { return true }  // unknown size → don't filter out
-    let mb = Double(bytes) / 1_048_576.0 * 1.05
-    return mb <= budgetMb
   }
 
   // MARK: - Shard + mmproj expansion
