@@ -236,7 +236,7 @@ class LlamaServer {
       self.modelStatuses = [:]
       return
     }
-    startStatusPolling(port: port)
+    startStatusPolling()
   }
 
   /// Terminates the currently running llama-server process and resets state
@@ -364,7 +364,7 @@ class LlamaServer {
     errorPipe = nil
   }
 
-  private func startStatusPolling(port: Int) {
+  private func startStatusPolling() {
     stopStatusPolling()
 
     healthCheckTask = Task {
