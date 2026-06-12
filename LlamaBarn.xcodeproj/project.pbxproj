@@ -285,6 +285,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				URL_SCHEME = "llamabarn-dev";
+				URL_SCHEME_ALT = "llama-dev";
 			};
 			name = Debug;
 		};
@@ -317,6 +318,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				URL_SCHEME = llamabarn;
+				URL_SCHEME_ALT = llama;
 			};
 			name = Release;
 		};

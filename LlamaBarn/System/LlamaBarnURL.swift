@@ -8,19 +8,21 @@ enum LlamaBarnURL: Equatable {
   /// `llamabarn://install?repo={org}/{repo}[&quant={label}]`
   case install(repo: String, quant: String?)
 
-  /// The URL scheme this build registers, read from `CFBundleURLTypes` in
-  /// `Info.plist`. Production builds register `llamabarn`; dev builds register
-  /// `llamabarn-dev`, so a developer with both installed can route deeplinks
-  /// deterministically (Launch Services would otherwise pick whichever build
-  /// it ranked higher).
-  private static let registeredScheme: String = {
+  /// The URL schemes this build registers, read from `CFBundleURLTypes` in
+  /// `Info.plist`. Production builds register `llamabarn` and `llama`; dev
+  /// builds register `llamabarn-dev` and `llama-dev`, so a developer with both
+  /// installed can route deeplinks deterministically (Launch Services would
+  /// otherwise pick whichever build it ranked higher). The `llama` schemes
+  /// exist for the rename to Llama; `llamabarn` stays as an alias so old links
+  /// keep working.
+  private static let registeredSchemes: Set<String> = {
     guard
       let types = Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes")
         as? [[String: Any]],
       let schemes = types.first?["CFBundleURLSchemes"] as? [String],
-      let first = schemes.first
-    else { return "llamabarn" }
-    return first.lowercased()
+      !schemes.isEmpty
+    else { return ["llamabarn"] }
+    return Set(schemes.map { $0.lowercased() })
   }()
 
   /// Parses a URL into a `LlamaBarnURL`. Returns nil for anything that isn't a
@@ -29,7 +31,8 @@ enum LlamaBarnURL: Equatable {
   /// canonicalization, repo existence) happens downstream in `HFRepoResolver`
   /// / `GGUFQuantLabel`.
   static func parse(_ url: URL) -> LlamaBarnURL? {
-    guard url.scheme?.lowercased() == registeredScheme else { return nil }
+    guard let scheme = url.scheme?.lowercased(), registeredSchemes.contains(scheme)
+    else { return nil }
 
     // Use URLComponents to get a tolerant parse of the query string.
     // `host` normalizes to lowercase, so case in the authority doesn't matter.
