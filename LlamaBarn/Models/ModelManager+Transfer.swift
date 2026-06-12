@@ -70,7 +70,7 @@ extension ModelManager {
     // 200 OK — server ignored our Range request (or we didn't send one).
     // Restart the file: truncate, reset the running hash, reset byte counter.
     // Both 200 and 206 yield a full-size; stash it for progress tracking.
-    let fullSize = extractFullSize(from: http, status: status)
+    let fullSize = extractFullSize(from: http)
     writerTable.sync { _ in
       if status == 200 {
         if writer.bytesWritten > 0 {
@@ -299,10 +299,10 @@ extension ModelManager {
   /// Extracts the full (not just remaining) size of the remote file from the response.
   /// For 206 responses we parse `Content-Range: bytes X-Y/Z`; for 200 we fall back to `Content-Length`.
   /// Returns 0 when neither header is present / parseable.
-  nonisolated private func extractFullSize(
-    from response: HTTPURLResponse, status: Int
-  ) -> Int64 {
-    if status == 206, let cr = response.value(forHTTPHeaderField: "Content-Range") {
+  nonisolated private func extractFullSize(from response: HTTPURLResponse) -> Int64 {
+    if response.statusCode == 206,
+      let cr = response.value(forHTTPHeaderField: "Content-Range")
+    {
       // Format: "bytes X-Y/Z" (Z may be "*" when total is unknown).
       if let slash = cr.firstIndex(of: "/") {
         let totalStr = cr[cr.index(after: slash)...]
