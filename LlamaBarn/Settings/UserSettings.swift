@@ -51,9 +51,9 @@ enum UserSettings {
   /// The network bind address for llama-server, or `nil` for localhost only.
   /// Accepts either a bool (`true` binds to `0.0.0.0`) or a specific IP address string.
   /// Examples:
-  ///   `defaults write app.llamabarn.LlamaBarn exposeToNetwork -bool true` → binds to 0.0.0.0
-  ///   `defaults write app.llamabarn.LlamaBarn exposeToNetwork -string "192.168.1.100"` → binds to that IP
-  ///   `defaults delete app.llamabarn.LlamaBarn exposeToNetwork` → localhost only
+  ///   `defaults write app.llama.Llama exposeToNetwork -bool true` → binds to 0.0.0.0
+  ///   `defaults write app.llama.Llama exposeToNetwork -string "192.168.1.100"` → binds to that IP
+  ///   `defaults delete app.llama.Llama exposeToNetwork` → localhost only
   static var networkBindAddress: String? {
     let raw = defaults.object(forKey: Keys.exposeToNetwork)
     // If it's a string, use it directly as the bind address

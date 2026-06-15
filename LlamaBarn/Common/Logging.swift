@@ -2,8 +2,8 @@ import Foundation
 
 enum Logging {
   #if DEBUG
-    static let subsystem = "app.llamabarn.LlamaBarn.dev"
+    static let subsystem = "app.llama.Llama.dev"
   #else
-    static let subsystem = "app.llamabarn.LlamaBarn"
+    static let subsystem = "app.llama.Llama"
   #endif
 }

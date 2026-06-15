@@ -82,7 +82,7 @@ enum LlamaBinaries {
       // Dev affordance: pretend unmanaged installs (e.g. Homebrew) aren't present,
       // so the missing -> install path can be exercised on a machine that already
       // has llama.cpp. Toggle with:
-      //   defaults write app.llamabarn.LlamaBarn.dev ignoreUnmanagedLlama -bool YES
+      //   defaults write app.llama.Llama.dev ignoreUnmanagedLlama -bool YES
       if UserDefaults.standard.bool(forKey: "ignoreUnmanagedLlama") {
         logger.debug("ignoreUnmanagedLlama set; ignoring unmanaged installs")
         return .missing

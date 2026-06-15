@@ -218,7 +218,7 @@ enum MemProfileCache {
   }
 
   private static var cacheDir: URL {
-    let bundleId = Bundle.main.bundleIdentifier ?? "app.llamabarn.LlamaBarn"
+    let bundleId = Bundle.main.bundleIdentifier ?? "app.llama.Llama"
     return FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
       .appendingPathComponent(bundleId)
       .appendingPathComponent("MemProfile")

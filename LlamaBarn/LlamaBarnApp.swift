@@ -66,6 +66,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   func applicationDidFinishLaunching(_ notification: Notification) {
+    // Carry pre-rename (LlamaBarn) settings and staging files into the new
+    // (Llama) identity. Must run before anything reads settings or scans the
+    // cache below (ModelManager, the server, the menu).
+    RenameMigration.runIfNeeded()
+
     // Enable visual debugging if LB_DEBUG_UI is set
     NSView.swizzleDebugBehavior()
 

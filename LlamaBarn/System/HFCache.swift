@@ -20,6 +20,11 @@ enum HFCache {
 
   private static let logger = Logger(subsystem: Logging.subsystem, category: "HFCache")
 
+  /// Name of the hidden dir under the HF cache that holds in-progress `.partial`
+  /// files. Tied to the app's "llama" identity; `RenameMigration` moves the
+  /// pre-rename `.llamabarn-partial` dir here on first launch.
+  static let partialRootDirName = ".llama-partial"
+
   // MARK: - Path Helpers (pure, no I/O)
 
   /// Parses a HF download URL and returns the repo directory name.
@@ -82,7 +87,7 @@ enum HFCache {
   /// same filesystem (moveItem is atomic).
   static func partialDir(cacheDir: URL, modelId: String) -> URL {
     cacheDir
-      .appendingPathComponent(".llamabarn-partial")
+      .appendingPathComponent(partialRootDirName)
       .appendingPathComponent(modelId)
   }
 
@@ -128,14 +133,14 @@ enum HFCache {
     return total
   }
 
-  /// Cleans up `.llamabarn-partial/<id>` subdirs for ids that are already
+  /// Cleans up `<partialRootDirName>/<id>` subdirs for ids that are already
   /// installed (e.g. a deeplink download that landed but left its partial dir
   /// behind). We don't surface remaining partials as paused-download rows on
   /// startup — there's no in-memory `Model` for them without a deeplink to
   /// rebuild from. Re-clicking the deeplink rebuilds the entry with the same
   /// id and `openPartialWriter` resumes from the on-disk bytes.
   static func cleanInstalledPartials(cacheDir: URL, installedIds: Set<String>) {
-    let root = cacheDir.appendingPathComponent(".llamabarn-partial")
+    let root = cacheDir.appendingPathComponent(partialRootDirName)
     guard let subdirs = try? FileManager.default.contentsOfDirectory(atPath: root.path) else {
       return
     }
