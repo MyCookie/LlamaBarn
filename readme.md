@@ -71,13 +71,13 @@ See complete API reference in `llama-server` [docs](https://github.com/ggml-org/
 
 ```sh
 # bind to all interfaces (0.0.0.0)
-defaults write app.llamabarn.LlamaBarn exposeToNetwork -bool YES
+defaults write app.llama.Llama exposeToNetwork -bool YES
 
 # or bind to a specific IP (e.g., for Tailscale)
-defaults write app.llamabarn.LlamaBarn exposeToNetwork -string "100.x.x.x"
+defaults write app.llama.Llama exposeToNetwork -string "100.x.x.x"
 
 # disable (default)
-defaults delete app.llamabarn.LlamaBarn exposeToNetwork
+defaults delete app.llama.Llama exposeToNetwork
 ```
 
 ## Roadmap
